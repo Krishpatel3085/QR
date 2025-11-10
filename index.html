@@ -3,197 +3,529 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Details QR Generator</title>
-    <!-- 1. Include Tailwind CSS for styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- 2. Include qrious.js for QR code generation -->
+    <title>User Admin & QR App</title>
+    <!-- 1. Include qrious.js for QR code generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    
+    <!-- 2. Pure CSS for Styling (No Frameworks) -->
     <style>
-        /* A simple class to hide elements */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+        }
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-top: 0;
+        }
+
+        /* Wrapper for main view (form + table) */
+        #main-view {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Form Styles */
+        #user-form {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        @media (min-width: 600px) {
+            #user-form {
+                grid-template-columns: 1fr 1fr;
+            }
+            #user-form div:nth-child(2) { grid-column: 2 / 3; }
+            #user-form div:nth-child(3) { grid-column: 1 / 2; }
+            #user-form button { grid-column: 1 / 3; }
+        }
+        #user-form div {
+            display: flex;
+            flex-direction: column;
+        }
+        #user-form label {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #555;
+        }
+        #user-form input {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        #user-form input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        .submit-button {
+            padding: 0.85rem;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .submit-button:hover {
+            background-color: #2980b9;
+        }
+
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        thead {
+            background-color: #ecf0f1;
+        }
+        th, td {
+            padding: 0.8rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            vertical-align: middle;
+        }
+        th {
+            font-weight: 600;
+            color: #34495e;
+        }
+        td .qr-button {
+            padding: 0.5rem 0.8rem;
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s;
+        }
+        td .qr-button:hover {
+            background-color: #27ae60;
+        }
+
+        /* QR Modal Styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 25px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 350px;
+            border-radius: 10px;
+            text-align: center;
+            position: relative;
+        }
+        .close-btn {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-btn:hover,
+        .close-btn:focus {
+            color: black;
+            text-decoration: none;
+        }
+        #modal-qr-canvas {
+            width: 100% !important;
+            height: auto !important;
+            max-width: 300px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+
+        /* Details View Styles (from user.html) */
+        #details-view {
+            max-width: 450px;
+            margin: 0 auto; /* Center the card */
+            text-align: center;
+        }
+        .card {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+            text-align: left;
+        }
+        .card-field {
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        .card-field:last-child {
+            border-bottom: none;
+        }
+        .card-field .label {
+            font-weight: 600;
+            color: #555;
+        }
+        .card-field .value {
+            font-weight: 400;
+            color: #333;
+        }
+        #error-message {
+            color: #e74c3c;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        .action-button {
+            padding: 0.85rem 1.5rem;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 1.5rem;
+        }
+        .action-button:hover {
+            background-color: #2980b9;
+        }
+        .back-button {
+            background-color: #95a5a6;
+        }
+        .back-button:hover {
+            background-color: #7f8c8d;
+        }
+        #details-qr-container {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            display: none; /* Hidden by default */
+        }
+        #details-qr-canvas {
+            width: 100% !important;
+            height: auto !important;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        /* Helper class */
         .hidden {
             display: none;
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans p-4">
+<body>
 
-    <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg w-full max-w-md transition-all duration-300">
-
-        <!-- ===== VIEW 1: USER FORM (Default View) ===== -->
-        <div id="form-container">
-            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Enter Your Details</h2>
-            <form id="user-form" class="space-y-4">
+    <div class="container">
+        
+        <!-- ===== VIEW 1: MAIN VIEW (FORM & TABLE) ===== -->
+        <div id="main-view">
+            <h1>User Management</h1>
+            
+            <form id="user-form">
                 <div>
-                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
-                    <input type="text" id="username" name="username" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                    <label for="username">Username</label>
+                    <input type="text" id="username" required>
                 </div>
                 <div>
-                    <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input type="email" id="email" name="email" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                    <label for="email">Email</label>
+                    <input type="email" id="email" required>
                 </div>
                 <div>
-                    <label for="mobile" class="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
-                    <input type="tel" id="mobile" name="mobile" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none" required>
+                    <label for="mobile">Mobile Number</label>
+                    <input type="tel" id="mobile" required>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                    Generate QR Code
-                </button>
+                <button type="submit" class="submit-button">Add User</button>
             </form>
+
+            <h2>All Users</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Mobile</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="user-table-body">
+                    <!-- User rows will be injected here by JavaScript -->
+                </tbody>
+            </table>
         </div>
 
-        <!-- ===== VIEW 2: QR CODE DISPLAY (Hidden by default) ===== -->
-        <div id="qr-container" class="hidden text-center">
-            <h2 class="text-2xl font-bold text-center text-gray-800 mb-4">Your Unique QR Code</h2>
-            <p class="text-gray-600 mb-4">Scan this code to view your details.</p>
-            <!-- Canvas element where the QR code will be drawn -->
-            <canvas id="qr-canvas" class="w-full max-w-xs mx-auto rounded-lg shadow-md border border-gray-200"></canvas>
-            <button id="back-button" class="mt-6 w-full bg-gray-600 text-white p-3 rounded-lg font-semibold hover:bg-gray-700 transition-colors">
-                Create New
-            </button>
-        </div>
+        <!-- ===== VIEW 2: DETAILS VIEW (CARD) ===== -->
+        <div id="details-view" class="hidden">
+            <h1>User Details</h1>
 
-        <!-- ===== VIEW 3: USER DETAILS (Hidden by default, shown on QR scan) ===== -->
-        <div id="details-container" class="hidden">
-            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">User Details</h2>
-            <div id="details-card" class="bg-blue-50 p-6 rounded-lg shadow-md space-y-3">
-                <div class="flex justify-between">
-                    <span class="font-semibold text-gray-700">Username:</span>
-                    <span id="details-username" class="text-gray-900 font-medium"></span>
+            <!-- Card to be populated by JS -->
+            <div id="details-card" class="card hidden">
+                <div class="card-field">
+                    <span class="label">Username:</span>
+                    <span id="details-username" class="value"></span>
                 </div>
-                <hr>
-                <div class="flex justify-between">
-                    <span class="font-semibold text-gray-700">Email:</span>
-                    <span id="details-email" class="text-gray-900 font-medium"></span>
+                <div class="card-field">
+                    <span class="label">Email:</span>
+                    <span id="details-email" class="value"></span>
                 </div>
-                <hr>
-                <div class="flex justify-between">
-                    <span class="font-semibold text-gray-700">Mobile:</span>
-                    <span id="details-mobile" class="text-gray-900 font-medium"></span>
+                <div class="card-field">
+                    <span class="label">Mobile:</span>
+                    <span id="details-mobile" class="value"></span>
                 </div>
             </div>
-            <p id="details-error" class="hidden text-center text-red-500 mt-4"></p>
-        </div>
 
+            <!-- Error message -->
+            <p id="error-message" class="hidden"></p>
+
+            <!-- Button and QR display -->
+            <button id="show-qr-button" class="action-button hidden">Show QR Code</button>
+            <button id="back-button" class="action-button back-button">Back to List</button>
+
+            <div id="details-qr-container">
+                <p style="font-size: 0.9rem; color: #666;">Share this user's details</p>
+                <canvas id="details-qr-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== VIEW 3: QR CODE MODAL (Hidden) ===== -->
+    <div id="qr-modal" class="modal">
+        <div class="modal-content">
+            <span id="close-modal" class="close-btn">&times;</span>
+            <h3>Scan this QR Code</h3>
+            <p style="font-size: 0.9rem; color: #666; margin-top: -10px;">Links to this user's details page.</p>
+            <canvas id="modal-qr-canvas"></canvas>
+        </div>
     </div>
 
     <script>
-        // Wait for the DOM to be fully loaded before running script
-        window.addEventListener('DOMContentLoaded', () => {
-
+        document.addEventListener('DOMContentLoaded', () => {
             // === 1. Get DOM Elements ===
-            const formContainer = document.getElementById('form-container');
-            const qrContainer = document.getElementById('qr-container');
-            const detailsContainer = document.getElementById('details-container');
-
+            // Views
+            const mainView = document.getElementById('main-view');
+            const detailsView = document.getElementById('details-view');
+            
+            // Main View Elements
             const userForm = document.getElementById('user-form');
-            const qrCanvas = document.getElementById('qr-canvas');
-            const backButton = document.getElementById('back-button');
+            const tableBody = document.getElementById('user-table-body');
+            const modal = document.getElementById('qr-modal');
+            const closeModalBtn = document.getElementById('close-modal');
+            const modalQrCanvas = document.getElementById('modal-qr-canvas');
 
-            const detailsUsername = document.getElementById('details-username');
-            const detailsEmail = document.getElementById('details-email');
-            const detailsMobile = document.getElementById('details-mobile');
+            // Details View Elements
             const detailsCard = document.getElementById('details-card');
-            const detailsError = document.getElementById('details-error');
+            const errorMessage = document.getElementById('error-message');
+            const showQrButton = document.getElementById('show-qr-button');
+            const backButton = document.getElementById('back-button');
+            const detailsQrContainer = document.getElementById('details-qr-container');
+            const detailsQrCanvas = document.getElementById('details-qr-canvas');
 
-            // === 2. Page Load "Router" ===
-            // This function checks the URL to see if we should show the form or details
+            const STORAGE_KEY = 'qrAppUsers';
+            let currentUserId = null; // Store ID for details view
+
+            // === 2. Helper Functions for Storage ===
+            function getUsersFromStorage() {
+                const usersJSON = localStorage.getItem(STORAGE_KEY);
+                return usersJSON ? JSON.parse(usersJSON) : [];
+            }
+            function saveUsersToStorage(usersArray) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(usersArray));
+            }
+
+            // === 3. Main "Router" on Page Load ===
             function handlePageLoad() {
                 const params = new URLSearchParams(window.location.search);
                 const userId = params.get('id');
 
                 if (userId) {
-                    // If an 'id' is in the URL, try to display details
-                    displayUserDetails(userId);
+                    currentUserId = userId;
+                    showDetailsView(userId);
                 } else {
-                    // Otherwise, show the main form
-                    showView(formContainer);
+                    showMainView();
                 }
             }
 
-            // === 3. Function to Display User Details ===
-            function displayUserDetails(userId) {
-                // Retrieve the user data from localStorage
-                const userDataString = localStorage.getItem(userId);
+            // === 4. View Switching Functions ===
+            function showMainView() {
+                mainView.classList.remove('hidden');
+                detailsView.classList.add('hidden');
+                renderUserTable(); // Refresh table
+            }
 
-                if (userDataString) {
-                    const userData = JSON.parse(userDataString);
+            function showDetailsView(userId) {
+                mainView.classList.add('hidden');
+                detailsView.classList.remove('hidden');
 
-                    // Populate the details card
-                    detailsUsername.textContent = userData.username;
-                    detailsEmail.textContent = userData.email;
-                    detailsMobile.textContent = userData.mobile;
+                const users = getUsersFromStorage();
+                const user = users.find(u => u.id === userId);
 
-                    // Show the details view
-                    showView(detailsContainer);
+                if (user) {
+                    // User found, populate card
+                    document.getElementById('details-username').textContent = user.username;
+                    document.getElementById('details-email').textContent = user.email;
+                    document.getElementById('details-mobile').textContent = user.mobile;
+                    
                     detailsCard.classList.remove('hidden');
-                    detailsError.classList.add('hidden');
+                    showQrButton.classList.remove('hidden');
+                    errorMessage.classList.add('hidden');
                 } else {
-                    // If no data is found for that ID
-                    detailsError.textContent = 'User not found or data has expired.';
+                    // User not found
+                    errorMessage.textContent = "User not found or data has expired.";
+                    errorMessage.classList.remove('hidden');
+                    
                     detailsCard.classList.add('hidden');
-                    detailsError.classList.remove('hidden');
-                    showView(detailsContainer);
+                    showQrButton.classList.add('hidden');
                 }
             }
 
-            // === 4. Form Submission Handler ===
-            userForm.addEventListener('submit', (e) => {
-                e.preventDefault(); // Stop form from reloading the page
+            // === 5. Main View: Render Table ===
+            function renderUserTable() {
+                const users = getUsersFromStorage();
+                tableBody.innerHTML = ''; // Clear existing table
 
-                // Get form values
-                const username = e.target.username.value;
-                const email = e.target.email.value;
-                const mobile = e.target.mobile.value;
+                if (users.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: #888;">No users found. Add one above.</td></tr>';
+                    return;
+                }
 
-                // Create a unique ID for this user's data
-                const userId = 'user_' + crypto.randomUUID();
-
-                // Store the data in localStorage
-                const userData = { username, email, mobile };
-                localStorage.setItem(userId, JSON.stringify(userData));
-
-                // Generate the unique URL for the QR code
-                // This points back to this same page, but with a query parameter
-                const url = `${window.location.origin}${window.location.pathname}?id=${userId}`;
-
-                // Generate the QR code
-                new QRious({
-                    element: qrCanvas,
-                    value: url,
-                    size: 250,        // Size in pixels
-                    level: 'H',       // High error correction
-                    padding: 15
+                users.forEach(user => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${escapeHTML(user.username)}</td>
+                        <td>${escapeHTML(user.email)}</td>
+                        <td>${escapeHTML(user.mobile)}</td>
+                        <td>
+                            <button class="qr-button" data-id="${user.id}">View QR</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
                 });
+            }
 
-                // Show the QR code view
-                showView(qrContainer);
-                
-                // Clear the form for the next use
+            // === 6. Main View: Form Submission ===
+            userForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('username').value;
+                const email = document.getElementById('email').value;
+                const mobile = document.getElementById('mobile').value;
+
+                const newUser = {
+                    id: crypto.randomUUID(),
+                    username: username,
+                    email: email,
+                    mobile: mobile
+                };
+
+                const users = getUsersFromStorage();
+                users.push(newUser);
+                saveUsersToStorage(users);
+
+                renderUserTable();
                 userForm.reset();
             });
 
-            // === 5. "Create New" Button Handler ===
+            // === 7. Main View: Table "View QR" Button ===
+            tableBody.addEventListener('click', (e) => {
+                if (e.target.tagName === 'BUTTON' && e.target.dataset.id) {
+                    const userId = e.target.dataset.id;
+                    
+                    // Construct URL pointing back to this page
+                    const url = `${window.location.pathname}?id=${userId}`;
+
+                    new QRious({
+                        element: modalQrCanvas,
+                        value: url,
+                        size: 300,
+                        level: 'H',
+                        padding: 15
+                    });
+                    
+                    modal.style.display = 'block';
+                }
+            });
+
+            // === 8. Main View: Modal Close Handlers ===
+            closeModalBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+            window.addEventListener('click', (e) => {
+                if (e.target == modal) {
+                    modal.style.display = 'none';
+                }
+            });
+
+            // === 9. Details View: Button Handlers ===
             backButton.addEventListener('click', () => {
-                // Clear the URL query string by reloading the page to its base path.
-                // This fixes SecurityError with pushState in sandboxed environments.
+                // Go back to main list by reloading page without query params
                 window.location.href = window.location.pathname;
             });
 
-            // === 6. Helper function to switch views ===
-            function showView(viewToShow) {
-                // Hide all views first
-                formContainer.classList.add('hidden');
-                qrContainer.classList.add('hidden');
-                detailsContainer.classList.add('hidden');
+            showQrButton.addEventListener('click', () => {
+                // The URL is just the current page's URL
+                const url = window.location.href;
 
-                // Show the requested view
-                viewToShow.classList.remove('hidden');
+                new QRious({
+                    element: detailsQrCanvas,
+                    value: url,
+                    size: 300,
+                    level: 'H',
+                    padding: 15
+                });
+
+                detailsQrContainer.style.display = 'block';
+                showQrButton.classList.add('hidden');
+            });
+
+            // === 10. Utility ===
+            function escapeHTML(str) {
+                if (typeof str !== 'string') return '';
+                return str.replace(/[&<>"']/g, function(m) {
+                    return {
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#39;'
+                    }[m];
+                });
             }
 
-            // === 7. Initial Page Load ===
+            // === 11. Initial Page Load ===
             handlePageLoad();
         });
     </script>
-
 </body>
 </html>
