@@ -1,0 +1,13 @@
+{
+    "name": "user-qr-app-mongodb",
+    "version": "1.0.0",
+    "description": "A user QR app with a Node.js backend and MongoDB",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "express": "^4.19.2",
+        "mongodb": "^6.8.0"
+    }
+}
