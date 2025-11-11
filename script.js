@@ -1,13 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     // --- ⚠️ CONFIGURATION ⚠️ ---
-    // 1. Deploy your backend and put the URL here
-    const BASE_URL = "https://qr-h6dd.onrender.com/api";
-
-    // 2. Deploy your frontend to GitHub Pages and put the URL here
-    //    (e.g., https://your-username.github.io/qr-user-details)
-    const FRONTEND_URL = "https://krishpatel3085.github.io/QR";
+    const BASE_URL = "https://qr-h6dd.onrender.com/api"; 
+    const FRONTEND_URL = "https://krishpatel3085.github.io/QR"; 
     // ------------------------------
+
+    // --- NEW: A helper function to check for valid MongoDB IDs ---
+    // A valid ID is 24 characters long and only contains 0-9 or a-f.
+    const isValidMongoId = (id) => {
+        const mongoIdRegex = /^[0-9a-fA-F]{24}$/;
+        return id && mongoIdRegex.test(id);
+    };
 
 
     // --- Check if we are on the main page (index.html) ---
@@ -15,16 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (userForm) {
         const userListContainer = document.getElementById('user-list-container');
         const generateBtn = document.getElementById('generate-btn');
-
-        // Modal elements
         const modalOverlay = document.getElementById('modal-overlay');
         const modalQrCode = document.getElementById('modal-qr-code');
         const modalCloseBtn = document.getElementById('modal-close-btn');
 
-        // Load all existing users when the page loads
         loadUsers();
-
-        // Handle form submission
         userForm.addEventListener('submit', handleFormSubmit);
 
         async function handleFormSubmit(e) {
@@ -48,12 +46,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const newUser = await response.json();
-
-                // --- 🌟 NEW v2 FLOW 🌟 ---
-                // 1. Generate the link
+                
+                // --- NEW VALIDATION ---
+                // Check if the server returned a valid user object with a valid ID
+                if (!newUser || !isValidMongoId(newUser._id)) {
+                    throw new Error('Server returned an invalid user object.');
+                }
+                
                 const detailLink = `${FRONTEND_URL}/details.html?id=${newUser._id}`;
-
-                // 2. Open the modal and pass the user data
                 openModalWithQR(detailLink, newUser);
 
             } catch (error) {
@@ -64,66 +64,58 @@ document.addEventListener('DOMContentLoaded', () => {
                 generateBtn.textContent = 'Generate QR';
             }
         }
-
+        
         function openModalWithQR(link, user) {
-            // 1. Clear any old QR code
             modalQrCode.innerHTML = '';
-
-            // 2. Generate new QR code inside the modal
             new QRCode(modalQrCode, {
                 text: link,
                 width: 200,
                 height: 200
             });
-
-            // 3. Show the modal
             modalOverlay.classList.add('show');
-
-            // 4. Set up the close button listener
-            //    We use .onclick to overwrite any previous listener
+            
             modalCloseBtn.onclick = () => {
-                closeModal();
-
-                // 5. AFTER closing, add user to list and reset form
-                displayUserInList(user);
+                modalOverlay.classList.remove('show');
+                displayUserInList(user); // Add user to list *after* closing
                 userForm.reset();
             };
-        }
-
-        function closeModal() {
-            modalOverlay.classList.remove('show');
         }
 
         async function loadUsers() {
             try {
                 const response = await fetch(`${BASE_URL}/users`);
                 if (!response.ok) throw new Error('Network response was not ok');
-
+                
                 const users = await response.json();
-
-                userListContainer.innerHTML = ''; // Clear existing list
-                if (users.length === 0) {
-                    userListContainer.innerHTML = '<p>No tickets generated yet.</p>';
+                userListContainer.innerHTML = ''; 
+                
+                const validUsers = users.filter(user => isValidMongoId(user._id));
+                
+                if (validUsers.length === 0) {
+                    userListContainer.innerHTML = '<p>No valid tickets found.</p>';
                 } else {
-                    users.forEach(displayUserInList);
+                    validUsers.forEach(displayUserInList);
                 }
             } catch (error) {
                 console.error('Error loading users:', error);
-                userListContainer.innerHTML = '<p>Error loading users. Is the backend running?</p>';
+                userListContainer.innerHTML = '<p>Error loading users.</p>';
             }
         }
 
-        // 🌟 UPDATED: Function to display user as a "Ticket Card"
         function displayUserInList(user) {
-            const detailLink = `${FRONTEND_URL}/details.html?id=${user._id}`;
+            // --- NEW VALIDATION ---
+            // Double-check: Do not display a card if the ID is invalid.
+            if (!isValidMongoId(user._id)) {
+                console.warn('Skipping user with invalid ID:', user);
+                return; 
+            }
 
-            // Use an <a> tag to make the whole card clickable
+            const detailLink = `${FRONTEND_URL}/details.html?id=${user._id}`;
             const card = document.createElement('a');
             card.href = detailLink;
             card.className = 'ticket-card';
-            card.target = "_blank"; // Open in new tab
-
-            // Create a short "Booking ID" style from the MongoDB ID
+            card.target = "_blank"; 
+            
             const shortId = user._id.substring(user._id.length - 6).toUpperCase();
 
             card.innerHTML = `
@@ -135,16 +127,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     <p class="user-id">ID: ${shortId}</p>
                 </div>
             `;
-
-            // Prepend new card to the top of the list
+            
             userListContainer.prepend(card);
 
-            // Generate the small thumbnail QR Code
             new QRCode(document.getElementById(`qr-thumb-${user._id}`), {
                 text: detailLink,
                 width: 80,
                 height: 80,
-                correctLevel: QRCode.CorrectLevel.L // Use lower correction for density
+                correctLevel : QRCode.CorrectLevel.L
             });
         }
     }
@@ -159,19 +149,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 const params = new URLSearchParams(window.location.search);
                 const userId = params.get('id');
 
-                if (!userId) {
-                    detailsCardContainer.innerHTML = '<h2>Error</h2><p>No user ID provided.</p>';
-                    return;
+                // --- NEW VALIDATION ---
+                // Check the ID from the URL *before* making the API call.
+                if (!isValidMongoId(userId)) {
+                    console.error('Invalid ID in URL:', userId);
+                    detailsCardContainer.innerHTML = '<h2>Error</h2><p>The User ID in the URL is invalid.</p>';
+                    return; // Stop execution
                 }
 
                 const response = await fetch(`${BASE_URL}/users/${userId}`);
-                if (!response.ok) throw new Error('User not found');
-
+                if (!response.ok) {
+                    throw new Error('User not found');
+                }
+                
                 const user = await response.json();
                 const detailLink = `${FRONTEND_URL}/details.html?id=${user._id}`;
                 const shortId = user._id.substring(user._id.length - 6).toUpperCase();
 
-                // 🌟 UPDATED: Render the "Large Ticket" style
                 detailsCardContainer.innerHTML = `
                     <div class="ticket-card-large">
                         <h2>${user.username}</h2>
@@ -181,8 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p class="user-id">Booking ID: ${shortId}</p>
                     </div>
                 `;
-
-                // Generate the large QR code for the details page
+                
                 new QRCode(document.getElementById('details-qr'), {
                     text: detailLink,
                     width: 250,
@@ -191,6 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (error) {
                 console.error('Error fetching details:', error);
+                // This is the error you were seeing!
                 detailsCardContainer.innerHTML = '<h2>Error</h2><p>Could not find user details.</p>';
             }
         }
