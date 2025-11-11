@@ -10,10 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // ------------------------------
 
 
-    // Check if we are on the main page (index.html)
+    // --- Check if we are on the main page (index.html) ---
     const userForm = document.getElementById('user-form');
     if (userForm) {
         const userListContainer = document.getElementById('user-list-container');
+        const generateBtn = document.getElementById('generate-btn');
+
+        // Modal elements
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalQrCode = document.getElementById('modal-qr-code');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
 
         // Load all existing users when the page loads
         loadUsers();
@@ -23,6 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function handleFormSubmit(e) {
             e.preventDefault();
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Generating...';
 
             const email = document.getElementById('email').value;
             const username = document.getElementById('username').value;
@@ -41,29 +49,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const newUser = await response.json();
 
-                // Add new user to the list without reloading the whole page
-                displayUserInList(newUser);
+                // --- 🌟 NEW v2 FLOW 🌟 ---
+                // 1. Generate the link
+                const detailLink = `${FRONTEND_URL}/details.html?id=${newUser._id}`;
 
-                // Clear the form
-                userForm.reset();
+                // 2. Open the modal and pass the user data
+                openModalWithQR(detailLink, newUser);
 
             } catch (error) {
                 console.error('Error creating user:', error);
                 alert('Failed to create user. Please check the console.');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.textContent = 'Generate QR';
             }
+        }
+
+        function openModalWithQR(link, user) {
+            // 1. Clear any old QR code
+            modalQrCode.innerHTML = '';
+
+            // 2. Generate new QR code inside the modal
+            new QRCode(modalQrCode, {
+                text: link,
+                width: 200,
+                height: 200
+            });
+
+            // 3. Show the modal
+            modalOverlay.classList.add('show');
+
+            // 4. Set up the close button listener
+            //    We use .onclick to overwrite any previous listener
+            modalCloseBtn.onclick = () => {
+                closeModal();
+
+                // 5. AFTER closing, add user to list and reset form
+                displayUserInList(user);
+                userForm.reset();
+            };
+        }
+
+        function closeModal() {
+            modalOverlay.classList.remove('show');
         }
 
         async function loadUsers() {
             try {
                 const response = await fetch(`${BASE_URL}/users`);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
+                if (!response.ok) throw new Error('Network response was not ok');
+
                 const users = await response.json();
 
                 userListContainer.innerHTML = ''; // Clear existing list
                 if (users.length === 0) {
-                    userListContainer.innerHTML = '<p>No users found. Add one above!</p>';
+                    userListContainer.innerHTML = '<p>No tickets generated yet.</p>';
                 } else {
                     users.forEach(displayUserInList);
                 }
@@ -73,38 +113,49 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // 🌟 UPDATED: Function to display user as a "Ticket Card"
         function displayUserInList(user) {
-            const card = document.createElement('div');
-            card.className = 'user-card';
-
             const detailLink = `${FRONTEND_URL}/details.html?id=${user._id}`;
 
+            // Use an <a> tag to make the whole card clickable
+            const card = document.createElement('a');
+            card.href = detailLink;
+            card.className = 'ticket-card';
+            card.target = "_blank"; // Open in new tab
+
+            // Create a short "Booking ID" style from the MongoDB ID
+            const shortId = user._id.substring(user._id.length - 6).toUpperCase();
+
             card.innerHTML = `
-                <h3>${user.username}</h3>
-                <p>${user.email}</p>
-                <div class="qr-code" id="qr-${user._id}"></div>
-                <small>Scan to view details</small>
+                <div class="ticket-qr" id="qr-thumb-${user._id}"></div>
+                <div class="ticket-info">
+                    <h3>${user.username}</h3>
+                    <p>${user.email}</p>
+                    <p>${user.mobile}</p>
+                    <p class="user-id">ID: ${shortId}</p>
+                </div>
             `;
 
-            userListContainer.appendChild(card);
+            // Prepend new card to the top of the list
+            userListContainer.prepend(card);
 
-            // Generate the QR Code
-            new QRCode(document.getElementById(`qr-${user._id}`), {
+            // Generate the small thumbnail QR Code
+            new QRCode(document.getElementById(`qr-thumb-${user._id}`), {
                 text: detailLink,
-                width: 150,
-                height: 150
+                width: 80,
+                height: 80,
+                correctLevel: QRCode.CorrectLevel.L // Use lower correction for density
             });
         }
     }
 
-    // Check if we are on the details page (details.html)
+    // --- Check if we are on the details page (details.html) ---
     const detailsCardContainer = document.getElementById('details-card-container');
     if (detailsCardContainer) {
         loadUserDetails();
 
         async function loadUserDetails() {
             try {
-                // Get the user ID from the URL (e.g., ?id=12345)
                 const params = new URLSearchParams(window.location.search);
                 const userId = params.get('id');
 
@@ -114,18 +165,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 const response = await fetch(`${BASE_URL}/users/${userId}`);
-                if (!response.ok) {
-                    throw new Error('User not found');
-                }
+                if (!response.ok) throw new Error('User not found');
 
                 const user = await response.json();
+                const detailLink = `${FRONTEND_URL}/details.html?id=${user._id}`;
+                const shortId = user._id.substring(user._id.length - 6).toUpperCase();
 
-                // Display the user details
+                // 🌟 UPDATED: Render the "Large Ticket" style
                 detailsCardContainer.innerHTML = `
-                    <h2>${user.username}</h2>
-                    <p><strong>Email:</strong> ${user.email}</p>
-                    <p><strong>Mobile:</strong> ${user.mobile}</p>
+                    <div class="ticket-card-large">
+                        <h2>${user.username}</h2>
+                        <div id="details-qr"></div>
+                        <p><strong>Email:</strong> ${user.email}</p>
+                        <p><strong>Mobile:</strong> ${user.mobile}</p>
+                        <p class="user-id">Booking ID: ${shortId}</p>
+                    </div>
                 `;
+
+                // Generate the large QR code for the details page
+                new QRCode(document.getElementById('details-qr'), {
+                    text: detailLink,
+                    width: 250,
+                    height: 250
+                });
 
             } catch (error) {
                 console.error('Error fetching details:', error);

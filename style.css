@@ -84,73 +84,163 @@ hr {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    box-sizing: border-box;
-    /* Important for 100% width */
+    box-sizing: border-box; /* Important for 100% width */
 }
 
-/* --- User List (index.html) --- */
-#user-list-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-.user-card {
-    background: #fafafa;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    padding: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    display: flex;
-    flex-direction: column;
+/* --- 🌟 NEW: Modal Styles (index.html) 🌟 --- */
+#modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    
+    /* Hidden by default */
+    display: none; 
+    justify-content: center;
     align-items: center;
 }
 
-.user-card h3 {
-    margin-top: 0;
-    color: #3498db;
+#modal-overlay.show {
+    /* Shown with JavaScript */
+    display: flex;
 }
 
-.user-card p {
-    margin: 5px 0;
+#modal-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
-.qr-code {
-    width: 150px;
-    height: 150px;
-    margin-top: 15px;
-    border: 5px solid #fff;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+#modal-qr-code {
+    margin: 20px auto;
+    width: 200px; /* QR Code size */
+    height: 200px;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
 }
 
-.qr-code img {
+#modal-qr-code img {
     width: 100% !important;
     height: 100% !important;
 }
 
-/* --- Details Card (details.html) --- */
-#details-card-container {
-    background: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+#modal-close-btn {
+    margin-top: 10px;
+    background-color: #e74c3c;
+}
+#modal-close-btn:hover {
+    background-color: #c0392b;
+}
+
+
+/* --- 🌟 UPDATED: Ticket Card List (index.html) 🌟 --- */
+#user-list-container {
+    display: grid;
+    grid-template-columns: 1fr; /* One column of tickets */
+    gap: 20px;
+}
+
+a.ticket-card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    
+    display: grid;
+    grid-template-columns: 100px 1fr; /* QR on left, info on right */
+    gap: 20px;
+    padding: 20px;
+    align-items: center;
+    
+    text-decoration: none;
+    color: inherit;
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+a.ticket-card:hover {
+    box-shadow: 0 6px 15px rgba(0,0,0,0.12);
+    transform: translateY(-3px);
+}
+
+.ticket-qr {
+    width: 80px;
+    height: 80px;
+    padding: 5px;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 4px;
+}
+
+.ticket-qr img {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.ticket-info h3 {
+    margin: 0 0 5px 0;
+    color: #3498db;
+}
+
+.ticket-info p {
+    margin: 4px 0;
+    font-size: 0.95rem;
+    color: #555;
+}
+
+.ticket-info .user-id {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9em;
+    color: #888;
+    margin-top: 10px;
+}
+
+
+/* --- 🌟 UPDATED: Details Card (details.html) 🌟 --- */
+.ticket-card-large {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
     padding: 30px;
     max-width: 500px;
     margin: 20px auto;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     text-align: center;
 }
 
-#details-card-container h2 {
+.ticket-card-large h2 {
     color: #3498db;
     margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 2rem;
 }
 
-#details-card-container p {
+#details-qr {
+    width: 250px;
+    height: 250px;
+    margin: 15px auto 25px auto;
+    padding: 10px;
+    border: 1px solid #eee;
+    background: #fff;
+}
+
+#details-qr img {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.ticket-card-large p {
     font-size: 1.1rem;
     margin: 10px 0;
+    color: #333;
 }
 
-#details-card-container p strong {
+.ticket-card-large p strong {
     color: #555;
     display: inline-block;
     width: 100px;
@@ -158,9 +248,27 @@ hr {
     margin-right: 10px;
 }
 
+.ticket-card-large .user-id {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.1em;
+    color: #777;
+    margin-top: 20px;
+    border-top: 1px dashed #ccc;
+    padding-top: 20px;
+}
+
 /* --- Responsive --- */
 @media (max-width: 600px) {
     .container {
         padding: 15px;
+    }
+    
+    a.ticket-card {
+        grid-template-columns: 1fr; /* Stack QR and info on mobile */
+        text-align: center;
+    }
+    
+    .ticket-qr {
+        margin: 0 auto 15px auto;
     }
 }

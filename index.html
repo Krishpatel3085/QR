@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR User Details System</title>
+    <title>QR User Details System (v2)</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,7 +16,7 @@
 
         <main>
             <section class="form-section">
-                <h2>Create New User</h2>
+                <h2>Create New User Ticket</h2>
                 <form id="user-form">
                     <div class="form-group">
                         <label for="email">Email</label>
@@ -30,18 +30,27 @@
                         <label for="mobile">Mobile Number</label>
                         <input type="tel" id="mobile" required>
                     </div>
-                    <button type="submit" class="btn">Generate QR Code</button>
+                    <button type="submit" class="btn" id="generate-btn">Generate QR</button>
                 </form>
             </section>
 
             <hr>
 
             <section class="list-section">
-                <h2>Existing Users</h2>
+                <h2>Your Tickets</h2>
                 <div id="user-list-container">
                     </div>
             </section>
         </main>
+    </div>
+
+    <div id="modal-overlay">
+        <div id="modal-content">
+            <h2>Your Unique QR Code</h2>
+            <p>Scan this with any QR reader.</p>
+            <div id="modal-qr-code"></div>
+            <button id="modal-close-btn" class="btn">Close</button>
+        </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
