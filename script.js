@@ -5,8 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const FRONTEND_URL = "https://krishpatel3085.github.io/QR"; 
     // ------------------------------
 
-    // --- NEW: A helper function to check for valid MongoDB IDs ---
-    // A valid ID is 24 characters long and only contains 0-9 or a-f.
+    // --- A helper function to check for valid MongoDB IDs ---
     const isValidMongoId = (id) => {
         const mongoIdRegex = /^[0-9a-fA-F]{24}$/;
         return id && mongoIdRegex.test(id);
@@ -47,8 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const newUser = await response.json();
                 
-                // --- 🌟 VALIDATION FIX 🌟 ---
-                // Check if the server returned a valid user object with a valid ID
                 if (!newUser || !isValidMongoId(newUser._id)) {
                     throw new Error('Server returned an invalid user object.');
                 }
@@ -89,8 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const users = await response.json();
                 userListContainer.innerHTML = ''; 
                 
-                // --- 🌟 VALIDATION FIX 🌟 ---
-                // Filters out any "bad data" from the database
                 const validUsers = users.filter(user => isValidMongoId(user._id));
                 
                 if (validUsers.length === 0) {
@@ -105,8 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function displayUserInList(user) {
-            // --- 🌟 VALIDATION FIX 🌟 ---
-            // Double-check: Do not display a card if the ID is invalid.
             if (!isValidMongoId(user._id)) {
                 console.warn('Skipping user with invalid ID:', user);
                 return; 
@@ -146,13 +139,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (detailsCardContainer) {
         loadUserDetails();
 
+        // --- 🌟 THIS FUNCTION IS UPDATED 🌟 ---
         async function loadUserDetails() {
             try {
                 const params = new URLSearchParams(window.location.search);
                 const userId = params.get('id');
 
-                // --- 🌟 VALIDATION FIX 🌟 ---
-                // Check the ID from the URL *before* making the API call.
                 if (!isValidMongoId(userId)) {
                     console.error('Invalid ID in URL:', userId);
                     detailsCardContainer.innerHTML = '<h2>Error</h2><p>The User ID in the URL is invalid.</p>';
@@ -165,30 +157,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 const user = await response.json();
-                const detailLink = `${FRONTEND_URL}/details.html?id=${user._id}`;
                 const shortId = user._id.substring(user._id.length - 6).toUpperCase();
 
+                // --- UPDATED HTML (QR CODE DIV IS REMOVED) ---
                 detailsCardContainer.innerHTML = `
                     <div class="ticket-card-large">
                         <h2>${user.username}</h2>
-                        <div id="details-qr"></div>
                         <p><strong>Email:</strong> ${user.email}</p>
                         <p><strong>Mobile:</strong> ${user.mobile}</p>
                         <p class="user-id">Booking ID: ${shortId}</p>
                     </div>
                 `;
                 
-                // This is the line that caused the 'QRCode is not defined' error.
-                // It's correct, but requires <script src="qrcode.min.js"> in details.html
-                new QRCode(document.getElementById('details-qr'), {
-                    text: detailLink,
-                    width: 250,
-                    height: 250
-                });
+                // --- QR CODE GENERATION IS REMOVED ---
 
             } catch (error) {
                 console.error('Error fetching details:', error);
-                // This is the error message you saw in the screenshot
                 detailsCardContainer.innerHTML = '<h2>Error</h2><p>Could not find user details.</p>';
             }
         }

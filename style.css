@@ -6,6 +6,7 @@ body {
     line-height: 1.6;
     margin: 0;
     padding: 20px;
+    perspective: 1000px; /* 🌟 ADDED FOR 3D EFFECT 🌟 */
 }
 
 .container {
@@ -87,7 +88,7 @@ hr {
     box-sizing: border-box; /* Important for 100% width */
 }
 
-/* --- 🌟 NEW: Modal Styles (index.html) 🌟 --- */
+/* --- Modal Styles (index.html) --- */
 #modal-overlay {
     position: fixed;
     top: 0;
@@ -96,15 +97,12 @@ hr {
     height: 100%;
     background: rgba(0, 0, 0, 0.7);
     z-index: 1000;
-    
-    /* Hidden by default */
     display: none; 
     justify-content: center;
     align-items: center;
 }
 
 #modal-overlay.show {
-    /* Shown with JavaScript */
     display: flex;
 }
 
@@ -118,7 +116,7 @@ hr {
 
 #modal-qr-code {
     margin: 20px auto;
-    width: 200px; /* QR Code size */
+    width: 200px;
     height: 200px;
     padding: 10px;
     background: #fff;
@@ -139,10 +137,10 @@ hr {
 }
 
 
-/* --- 🌟 UPDATED: Ticket Card List (index.html) 🌟 --- */
+/* --- Ticket Card List (index.html) --- */
 #user-list-container {
     display: grid;
-    grid-template-columns: 1fr; /* One column of tickets */
+    grid-template-columns: 1fr;
     gap: 20px;
 }
 
@@ -151,13 +149,11 @@ a.ticket-card {
     border: 1px solid #ddd;
     border-radius: 10px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    
     display: grid;
-    grid-template-columns: 100px 1fr; /* QR on left, info on right */
+    grid-template-columns: 100px 1fr;
     gap: 20px;
     padding: 20px;
     align-items: center;
-    
     text-decoration: none;
     color: inherit;
     transition: box-shadow 0.3s ease, transform 0.3s ease;
@@ -201,43 +197,45 @@ a.ticket-card:hover {
 }
 
 
-/* --- 🌟 UPDATED: Details Card (details.html) 🌟 --- */
+/* --- 🌟 UPDATED: 3D Details Card (details.html) 🌟 --- */
+
 .ticket-card-large {
-    background: #fff;
+    background: #ffffff;
     border: 1px solid #ddd;
-    border-radius: 10px;
-    padding: 30px;
+    border-radius: 15px; /* Slightly more rounded */
+    padding: 30px 40px;
     max-width: 500px;
-    margin: 20px auto;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin: 40px auto; /* More vertical margin */
+    
+    /* --- NEW 3D STYLES --- */
+    transform-style: preserve-3d; /* Tells child elements to stay 3D */
+    transform: rotateX(5deg); /* A subtle initial tilt */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15),
+                0 5px 10px rgba(0, 0, 0, 0.1);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
     text-align: center;
+}
+
+/* Add a hover effect to lift and flatten the card */
+.ticket-card-large:hover {
+    transform: rotateX(0deg) scale(1.03); /* Flattens and scales up */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2),
+                0 15px 20px rgba(0, 0, 0, 0.15);
 }
 
 .ticket-card-large h2 {
     color: #3498db;
     margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 2rem;
-}
-
-#details-qr {
-    width: 250px;
-    height: 250px;
-    margin: 15px auto 25px auto;
-    padding: 10px;
-    border: 1px solid #eee;
-    background: #fff;
-}
-
-#details-qr img {
-    width: 100% !important;
-    height: 100% !important;
+    margin-bottom: 25px; /* More spacing */
+    font-size: 2.2rem;
+    transform: translateZ(30px); /* Makes text "pop" out */
 }
 
 .ticket-card-large p {
-    font-size: 1.1rem;
-    margin: 10px 0;
+    font-size: 1.15rem;
+    margin: 12px 0;
     color: #333;
+    transform: translateZ(20px); /* Makes text "pop" out a bit */
 }
 
 .ticket-card-large p strong {
@@ -252,10 +250,12 @@ a.ticket-card:hover {
     font-family: 'Courier New', Courier, monospace;
     font-size: 1.1em;
     color: #777;
-    margin-top: 20px;
+    margin-top: 25px;
     border-top: 1px dashed #ccc;
-    padding-top: 20px;
+    padding-top: 25px;
+    transform: translateZ(15px); /* Sits slightly behind the other text */
 }
+
 
 /* --- Responsive --- */
 @media (max-width: 600px) {
