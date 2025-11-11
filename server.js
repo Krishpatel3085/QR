@@ -1,111 +1,89 @@
-// Import required modules
 const express = require('express');
-const { MongoClient, ObjectId } = require('mongodb');
-const path = require('path');
-
-// --- Configuration ---
-// Your local MongoDB connection URL
-const MONGO_URL = "mongodb+srv://adhyashaktiair17:Xkhbo697@aat.l2yk9yo.mongodb.net/QR";
-const DB_NAME = "userQrApp"; // The database name
-const COLLECTION_NAME = "users"; // The collection name
-const PORT = 3000; // The port your server will run on
-// ---------------------
+const mongoose = require('mongoose');
+const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
-app.use(express.json()); // Middleware to parse JSON request bodies
+const PORT = process.env.PORT || 5000;
 
-let db;
-let usersCollection;
+// --- Middleware ---
+app.use(cors()); // Allows requests from your GitHub Pages frontend
+app.use(express.json()); // Parses incoming JSON payloads
 
-// Function to connect to MongoDB
-async function connectToMongo() {
-    try {
-        const client = new MongoClient(MONGO_URL);
-        await client.connect();
-        console.log("Connected successfully to local MongoDB");
+// --- MongoDB Connection ---
 
-        db = client.db(DB_NAME);
-        usersCollection = db.collection(COLLECTION_NAME);
+const MONGODB_URI = 'mongodb+srv://adhyashaktiair17:Xkhbo697@aat.l2yk9yo.mongodb.net/QR';
+mongoose.connect(MONGODB_URI)
+    .then(() => console.log('MongoDB connected successfully.'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
-    } catch (err) {
-        console.error("Failed to connect to MongoDB", err);
-        process.exit(1); // Exit the process if connection fails
-    }
-}
+// --- User Schema and Model ---
+const userSchema = new mongoose.Schema({
+    email: { type: String, required: true, unique: true },
+    username: { type: String, required: true },
+    mobile: { type: String, required: true },
+}, { timestamps: true });
+
+const User = mongoose.model('User', userSchema);
 
 // --- API Routes ---
 
-// GET all users
-app.get('/api/users', async (req, res) => {
-    try {
-        const users = await usersCollection.find({}).toArray();
-        res.json(users.map(user => ({ ...user, id: user._id }))); // Send all users
-    } catch (err) {
-        console.error("Error fetching users:", err);
-        res.status(500).json({ message: "Error fetching users" });
-    }
+// Test route
+app.get('/api', (req, res) => {
+    res.send('QR User API is running!');
 });
 
-// POST a new user
+// POST /api/users - Create a new user
 app.post('/api/users', async (req, res) => {
     try {
-        const { username, email, mobile } = req.body;
-        if (!username || !email || !mobile) {
-            return res.status(400).json({ message: "Missing required fields" });
+        const { email, username, mobile } = req.body;
+        
+        if (!email || !username || !mobile) {
+            return res.status(400).json({ message: 'All fields are required' });
         }
 
-        const newUser = { username, email, mobile };
-        const result = await usersCollection.insertOne(newUser);
-
-        res.status(201).json({ ...newUser, id: result.insertedId });
-    } catch (err) {
-        console.error("Error adding user:", err);
-        res.status(500).json({ message: "Error adding user" });
+        const newUser = new User({ email, username, mobile });
+        await newUser.save();
+        
+        res.status(201).json(newUser); // Send back the created user
+    } catch (error) {
+        console.error(error);
+        if (error.code === 11000) { // Duplicate key error
+             return res.status(409).json({ message: 'Email already exists' });
+        }
+        res.status(500).json({ message: 'Server error' });
     }
 });
 
-// GET a single user by ID
+// GET /api/users - Get all users
+app.get('/api/users', async (req, res) => {
+    try {
+        const users = await User.find().sort({ createdAt: -1 }); // Get newest first
+        res.status(200).json(users);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET /api/users/:id - Get a single user by ID
 app.get('/api/users/:id', async (req, res) => {
     try {
-        const { id } = req.params;
-        if (!ObjectId.isValid(id)) {
-            return res.status(400).json({ message: "Invalid user ID format" });
-        }
-
-        const user = await usersCollection.findOne({ _id: new ObjectId(id) });
-
+        const user = await User.findById(req.params.id);
+        
         if (!user) {
-            return res.status(404).json({ message: "User not found" });
+            return res.status(404).json({ message: 'User not found' });
         }
-
-        res.json({ ...user, id: user._id }); // Send the user
-    } catch (err) {
-        console.error("Error fetching user:", err);
-        res.status(500).json({ message: "Error fetching user" });
+        
+        res.status(200).json(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
     }
-});
-
-
-// --- Frontend Serving ---
-
-// Serve the index.html file for the root and for any path
-// This is important so that your QR code links (e.g., /?id=123)
-// are also handled by your index.html file.
-app.get('*', (req, res) => {
-    // Check if the request is for an API route
-    if (req.path.startsWith('/api/')) {
-        return res.status(404).json({ message: "API route not found" });
-    }
-    // Otherwise, send the index.html file
-    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 
 // --- Start Server ---
-// First connect to Mongo, then start the Express server
-connectToMongo().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server running at http://localhost:${PORT}`);
-        console.log(`Serving index.html and API routes.`);
-    });
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
 });
