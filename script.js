@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const newUser = await response.json();
                 
-                // --- NEW VALIDATION ---
+                // --- 🌟 VALIDATION FIX 🌟 ---
                 // Check if the server returned a valid user object with a valid ID
                 if (!newUser || !isValidMongoId(newUser._id)) {
                     throw new Error('Server returned an invalid user object.');
@@ -89,6 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const users = await response.json();
                 userListContainer.innerHTML = ''; 
                 
+                // --- 🌟 VALIDATION FIX 🌟 ---
+                // Filters out any "bad data" from the database
                 const validUsers = users.filter(user => isValidMongoId(user._id));
                 
                 if (validUsers.length === 0) {
@@ -103,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function displayUserInList(user) {
-            // --- NEW VALIDATION ---
+            // --- 🌟 VALIDATION FIX 🌟 ---
             // Double-check: Do not display a card if the ID is invalid.
             if (!isValidMongoId(user._id)) {
                 console.warn('Skipping user with invalid ID:', user);
@@ -149,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const params = new URLSearchParams(window.location.search);
                 const userId = params.get('id');
 
-                // --- NEW VALIDATION ---
+                // --- 🌟 VALIDATION FIX 🌟 ---
                 // Check the ID from the URL *before* making the API call.
                 if (!isValidMongoId(userId)) {
                     console.error('Invalid ID in URL:', userId);
@@ -176,6 +178,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
                 
+                // This is the line that caused the 'QRCode is not defined' error.
+                // It's correct, but requires <script src="qrcode.min.js"> in details.html
                 new QRCode(document.getElementById('details-qr'), {
                     text: detailLink,
                     width: 250,
@@ -184,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (error) {
                 console.error('Error fetching details:', error);
-                // This is the error you were seeing!
+                // This is the error message you saw in the screenshot
                 detailsCardContainer.innerHTML = '<h2>Error</h2><p>Could not find user details.</p>';
             }
         }

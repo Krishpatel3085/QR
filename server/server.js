@@ -7,12 +7,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // --- Middleware ---
-app.use(cors()); // Allows requests from your GitHub Pages frontend
-app.use(express.json()); // Parses incoming JSON payloads
-
-// --- MongoDB Connection ---
+// 🌟 IMPORTANT: Ensures your frontend can talk to the backend
+app.use(cors()); 
+app.use(express.json()); 
 
 const MONGODB_URI = 'mongodb+srv://adhyashaktiair17:Xkhbo697@aat.l2yk9yo.mongodb.net/QR';
+// --- MongoDB Connection ---
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('MongoDB connected successfully.'))
     .catch(err => console.error('MongoDB connection error:', err));
@@ -69,6 +69,8 @@ app.get('/api/users', async (req, res) => {
 // GET /api/users/:id - Get a single user by ID
 app.get('/api/users/:id', async (req, res) => {
     try {
+        // 🌟 This route is where the 'CastError' happened
+        // It's working, but relies on a valid ID from the frontend.
         const user = await User.findById(req.params.id);
         
         if (!user) {
@@ -78,6 +80,7 @@ app.get('/api/users/:id', async (req, res) => {
         res.status(200).json(user);
     } catch (error) {
         console.error(error);
+        // This log is what you sent me before
         res.status(500).json({ message: 'Server error' });
     }
 });
