@@ -2,11 +2,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- ⚠️ CONFIGURATION ⚠️ ---
     // 1. Deploy your backend and put the URL here
-    const BASE_URL = "https://your-backend-service.onrender.com/api";
+    const BASE_URL = "https://qr-h6dd.onrender.com/api";
 
     // 2. Deploy your frontend to GitHub Pages and put the URL here
     //    (e.g., https://your-username.github.io/qr-user-details)
-    const FRONTEND_URL = "https://your-github-username.github.io/qr-user-details";
+    const FRONTEND_URL = "https://krishpatel3085.github.io/QR";
     // ------------------------------
 
 
